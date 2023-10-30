@@ -1,31 +1,28 @@
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config");
+const Token = require("../models/token");
 
-const generateToken = (data) =>
-    jwt.sign(data, SECRET_KEY, { expiresIn: "30d" });
+const generateToken = (data) => {
+    const token = jwt.sign(data, SECRET_KEY, { expiresIn: "30d" });
+    Token.insertToken(data.email, token);
+    return token;
+};
 
 const createUserJwt = (user) => {
     const payload = {
         email: user.email,
     };
-    console.log("Insert jwt into valid_jwt table");
-    //! insert jwt into valid_jwt table
-    //todo insert jwt into valid_jwt table
     return generateToken(payload);
 };
 
-const validateToken = (token) => {
-    try {
-        console.log("Check if jwt is in valid_jwt table");
-        const decoded = jwt.verify(token, SECRET_KEY);
-        return decoded;
-    } catch (err) {
-        return {};
-    }
+const readUserJwt = async (token) => {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    await Token.validateToken(decoded.email, token);
+    return decoded;
 };
 
 module.exports = {
     generateToken,
-    validateToken,
+    readUserJwt,
     createUserJwt,
 };

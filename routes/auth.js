@@ -1,5 +1,6 @@
 const express = require("express");
 const Pet = require("../models/pet");
+const Token = require("../models/token");
 const { createUserJwt } = require("../utils/tokens");
 const security = require("../middleware/security");
 const router = express.Router();
@@ -17,6 +18,21 @@ router.post("/login", async (req, res, next) => {
         next(err);
     }
 });
+
+router.post(
+    "/logout",
+    security.requireAuthenticatedUser,
+    async (req, res, next) => {
+        try {
+            const { email } = res.locals.user;
+            const token = res.locals.token;
+            await Token.deleteToken(email, token);
+            return res.status(200).json({ Message: "Goodbye :)" });
+        } catch (err) {
+            next(err);
+        }
+    }
+);
 
 router.post("/register", async (req, res, next) => {
     try {

@@ -2,16 +2,17 @@ const db = require("../db");
 const bcrypt = require("bcrypt");
 const { UnauthorizedError, BadRequestError } = require("../utils/errors");
 const { BCRYPT_WORK_FACTOR } = require("../config");
+const Token = require("./token");
 
 class Pet {
     static async makePublicPet(pet) {
         return {
-            id: pet.pet_id,
             username: pet.username,
-            firstName: pet.display_name,
+            displayName: pet.display_name,
             email: pet.email,
             dateJoined: pet.date_joined,
-            DOB: pet.dob
+            DOB: pet.dob,
+            profileImg: pet.profile_img,
         };
     }
 
@@ -40,36 +41,31 @@ class Pet {
         throw new UnauthorizedError("Invalid username or password");
     }
 
-    static async register(credentials) {
-        const requiredFields = [
-            "username",
-            "email",
-            "password",
-            "displayName"
-        ];
+    static async register(petInfo) {
+        const requiredFields = ["username", "email", "password", "displayName"];
         requiredFields.forEach((field) => {
-            if (!credentials.hasOwnProperty(field)) {
+            if (!petInfo.hasOwnProperty(field)) {
                 throw new BadRequestError(`Missing ${field} in request body.`);
             }
         });
 
-        if (credentials.email.indexOf("@") <= 0) {
+        if (petInfo.email.indexOf("@") <= 0) {
             throw new BadRequestError("Invalid email");
         }
 
-        if (credentials.displayName === "") {
+        if (petInfo.displayName === "") {
             throw new BadRequestError("Invalid display name");
         }
 
-        const lowercasedEmail = credentials.email.toLowerCase();
+        const lowercasedEmail = petInfo.email.toLowerCase();
 
         const existingPet = await Pet.fetchPetByEmail(lowercasedEmail);
         if (existingPet) {
-            throw new BadRequestError(`Duplicate email: ${credentials.email}`);
+            throw new BadRequestError(`Duplicate email: ${petInfo.email}`);
         }
 
         const hashedPassword = await bcrypt.hash(
-            credentials.password,
+            petInfo.password,
             BCRYPT_WORK_FACTOR
         );
         const result = await db.query(
@@ -78,17 +74,19 @@ class Pet {
                 email,
                 password,
                 display_name,
-                dob
+                dob,
+                profile_img
                 )
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING pet_id, username, display_name, email, date_joined, dob
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
             `,
             [
-                credentials.username,
+                petInfo.username,
                 lowercasedEmail,
                 hashedPassword,
-                credentials.displayName,
-                credentials.DOB,
+                petInfo.displayName,
+                petInfo.DOB,
+                petInfo.profileImg,
             ]
         );
         const pet = result.rows[0];
@@ -96,7 +94,7 @@ class Pet {
     }
 
     static async fetchPetByUsername(username) {
-        console.log(username)
+        // console.log(username);
         if (!username) {
             throw new BadRequestError("No username provided");
         }

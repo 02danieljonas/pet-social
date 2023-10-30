@@ -1,42 +1,45 @@
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config");
 const { UnauthorizedError } = require("../utils/errors");
+const { readUserJwt } = require("../utils/tokens");
 
 const extractTokenFromBearerHeader = ({ headers }) => {
-  if (headers?.authorization) {
-    const [scheme, token] = headers.authorization.split(" ")
-    if (scheme.trim() === "Bearer") {
-      return token
+    if (headers?.authorization) {
+        const [scheme, token] = headers.authorization.split(" ");
+        if (scheme.trim() === "Bearer") {
+            return token;
+        }
     }
-  }
-  return undefined
-}
+    return undefined;
+};
 
-const extractUserFromJwt = (req, res, next) => {
-  try {
-    const token = extractTokenFromBearerHeader(req)
-    if (token){
-      res.locals.user = jwt.verify(token, SECRET_KEY)
+const extractUserFromJwt = async (req, res, next) => {
+    try {
+        const token = extractTokenFromBearerHeader(req);
+        res.locals.token = token;
+        if (token) {
+            res.locals.user = await readUserJwt(token);
+        }
+        return next();
+    } catch (error) {
+        return next(error);
     }
-    return next()
-  } catch(error) {
-    return next()
-  }
-}
+};
 
 const requireAuthenticatedUser = (req, res, next) => {
-  try {
-    const { user } = res.locals
-    if (!user?.email) {
-        throw new UnauthorizedError()
+    try {
+        const { user } = res.locals;
+        if (!user?.email) {
+            throw new UnauthorizedError();
+        }
+        return next();
+    } catch (error) {
+        return next(error);
     }
-    return next()
-  } catch (error) {
-    return next(error)
-  }
-}
-  
+};
+
 module.exports = {
-  extractUserFromJwt,
-  requireAuthenticatedUser,
-}
+    extractUserFromJwt,
+    extractTokenFromBearerHeader,
+    requireAuthenticatedUser,
+};
