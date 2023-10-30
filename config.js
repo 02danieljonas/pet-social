@@ -18,7 +18,7 @@ function getDatabaseUri() {
         `postgresql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}`
     );
 }
-const BCRYPT_WORK_FACTOR = 13;
+const BCRYPT_WORK_FACTOR = parseInt(process.env.BCRYPT_WORK_FACTOR) || 13;
 
 // console.log("process.env".yellow, Object.keys(process.env))
 console.log("Social Config".red);
