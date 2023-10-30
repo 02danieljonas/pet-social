@@ -2,9 +2,9 @@
 
 
 ## **API Endpoints**
-| HTTP Method | Route                   | description                       |
-| ---         | ---                     | ---                               |
-| POST        | /pet/register | create user                       |
-| GET         | /pet/me | get user                          |
-| POST         | /pet/login | login                          |
-| POST         | /pet/logout | logout                          |
+| Method      | Path                    | Description                    |
+| ---         | ---                     | ---                            |
+| POST        | /pet/register           | create user                    |
+| GET         | /pet/me                 | get user                       |
+| POST        | /pet/login              | login                          |
+| POST        | /pet/logout             | logout                         |
