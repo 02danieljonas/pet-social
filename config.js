@@ -11,7 +11,7 @@ function getDatabaseUri() {
         : "postgres";
     const dbHost = process.env.DATABASE_HOST || "localhost";
     const dbPort = process.env.DATABASE_PORT || 5432;
-    const dbName = process.env.DATABASE_NAME || "social";
+    const dbName = process.env.DATABASE_NAME || "pet-social";
 
     return (
         process.env.DATABASE_URL ||
