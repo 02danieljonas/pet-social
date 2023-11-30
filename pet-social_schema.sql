@@ -1,6 +1,7 @@
 CREATE TABLE "pet"(
     pet_id          SERIAL PRIMARY KEY,
     username        VARCHAR(50) UNIQUE NOT NULL,
+    pet_type        
     display_name    VARCHAR(100) NOT NULL CHECK (display_name<>''),
     profile_img     VARCHAR,
     email           VARCHAR(100) NOT NULL UNIQUE,
@@ -48,5 +49,6 @@ CREATE TABLE "reply"(
     replyId         SERIAL PRIMARY KEY,
     reply           VARCHAR NOT NULL,
     pet_id          INTEGER NOT NULL REFERENCES "pet"(pet_id) ON DELETE CASCADE,
-    comment_id      INTEGER NOT NULL REFERENCES "comment"(comment_id) ON DELETE CASCADE
+    comment_id      INTEGER NOT NULL REFERENCES "comment"(comment_id) ON DELETE CASCADE,
+    date_posted     DATE NOT NULL DEFAULT NOW()
 );

@@ -3,7 +3,8 @@ const cors = require("cors");
 const morgan = require("morgan");
 const { NotFoundError, BadRequestError } = require("./utils/errors");
 const security = require("./middleware/security");
-const petRoutes = require("./routes/auth");
+const authRoutes = require("./routes/auth");
+const postRoutes = require("./routes/post");
 
 const app = express();
 
@@ -18,7 +19,8 @@ app.get("/", function (req, res) {
     return res.status(200).json({ ping: "pong" });
 });
 
-app.use("/pet", petRoutes);
+app.use("/auth", authRoutes);
+app.use("/post", postRoutes);
 
 /* Handle all 404 errors that weren't matched by a route */
 app.use((req, res, next) => {

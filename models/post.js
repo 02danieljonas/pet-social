@@ -2,43 +2,97 @@ const db = require("../db");
 const bcrypt = require("bcrypt");
 const { UnauthorizedError, BadRequestError } = require("../utils/errors");
 const { BCRYPT_WORK_FACTOR } = require("../config");
-const Token = require("./token");
+const Pet = require("./pet");
 
-class Pet {
-    static async makePublicPet(pet) {
+class Post {
+    static async makePublicPost(post) {
+        const pet = await Pet.makePublicPet(
+            await Pet.fetchPetById(post.pet_id)
+        );
+
         return {
-            username: pet.username,
-            displayName: pet.display_name,
-            email: pet.email,
-            dateJoined: pet.date_joined,
-            DOB: pet.dob,
-            profileImg: pet.profile_img,
+            displayName: pet.displayName,
+            post: post.post,
+            datePosted: post.date_posted,
+            img: post.img,
         };
     }
 
-    static async login(credentials) {
-        const requiredFields = ["username", "password"];
+    static validateObject(obj, fields){
+        try {
+            
+        } catch (error) {
+            
+        }
+    }
+
+    static async createPost(email, postInfo) {
+        const requiredFields = ["post"];
+
         requiredFields.forEach((field) => {
-            if (!credentials.hasOwnProperty(field)) {
+            if (!postInfo.hasOwnProperty(field)) {
                 throw new BadRequestError(`Missing ${field} in request body.`);
             }
         });
-        const pet = await Pet.fetchPetByUsername(credentials.username);
-        if (pet) {
-            const isValid = await bcrypt.compare(
-                credentials.password,
-                pet.password
-            );
-            if (isValid) {
-                return Pet.makePublicPet(pet);
+
+        if (postInfo.post.trim() === "") {
+            throw new BadRequestError("Post should not be empty");
+        }
+
+        postInfo.petId = (await Pet.fetchPetByEmail(email)).pet_id;
+
+        const result = await db.query(
+            `INSERT INTO post(
+                pet_id,
+                post,
+                img
+            )
+            VALUES ($1, $2, $3)
+            RETURNING *
+            `,
+            [postInfo.petId, postInfo.post, postInfo.img]
+        );
+        const post = result.rows[0];
+        console.log("------------------");
+        console.log(await Post.makePublicPost(post));
+        return await Post.makePublicPost(post);
+    }
+
+    static async deletePost(email, postInfo) {
+        const requiredFields = ["postId"];
+        requiredFields.forEach((field) => {
+            if (!postInfo.hasOwnProperty(field)) {
+                throw new BadRequestError(`Missing ${field} in request body.`);
             }
+        });
+
+        const petId = (await Pet.fetchPetByEmail(email)).pet_id;
+
+        const query = `DELETE FROM post WHERE pet_id = $1 AND post_id = $2`;
+        const result = await db.query(query, [petId, postInfo.postId]);
+        if (result.rowCount > 0) {
+            return;
         } else {
-            await bcrypt.compare(
-                "$2b$13$YFcwwKjaYhqqEuGHFlH.vO2I85GC2SSAEw5d5ATpAWvFi4haHGsyq",
-                credentials.password
+            throw new BadRequestError(
+                `This post does not exist or does not have you as the author. Post id: ${postInfo.postId}`
             );
         }
-        throw new UnauthorizedError("Invalid username or password");
+    }
+
+    static async getAllPostFromPet(petId) {
+        // select * from post where pet_id = petId
+    }
+
+    static async getAPost(postId) {
+        // select * from post where post_id = postId
+    }
+
+    // get all post of a user
+
+    // get a single post
+
+    static async test() {
+        return this.makePublicPost();
     }
 
     static async register(petInfo) {
@@ -94,6 +148,7 @@ class Pet {
     }
 
     static async fetchPetByUsername(username) {
+        // console.log(username);
         if (!username) {
             throw new BadRequestError("No username provided");
         }
@@ -112,16 +167,6 @@ class Pet {
         const pet = result.rows[0];
         return pet;
     }
-
-    static async fetchPetById(id){
-        if (!id) {
-            throw new BadRequestError("No id provided");
-        }
-        const query = `SELECT * FROM pet WHERE pet_id = $1`;
-        const result = await db.query(query, [id]);
-        const pet = result.rows[0];
-        return pet;
-    }
 }
 
-module.exports = Pet;
+module.exports = Post;
